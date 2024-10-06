@@ -116,10 +116,11 @@
 			return fs;
 		}
 
+
 		async function onRefresh(ci) {
 			ci.fsTree(null);
 			const tree = await ci.fsTree();
-			
+			ci.fsTree(toNodes(tree));
 		}
 
 		async function createDosInstance() {
