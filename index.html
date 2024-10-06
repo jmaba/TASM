@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <title>Turbo Assembler with JS-DOS</title>
+    <style>
+		body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+			width: 100%;
+            display: flex;
+        }
+
+        #editor {
+            width: 50%;
+            height: 100% !important;
+            border-right: 2px solid #ddd; /* Visual separation between editor and DOSBox */
+        }
+
+        #dosbox {
+            width: 50%;
+            height: 100%;
+            position: relative;
+        }
+
+        #dosbox canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+		
+        .container {
+           display: flex;
+           flex-wrap: wrap;
+           flex-direction: row;
+        }
+        .player {
+           width: 40vw;
+           height: 25vw;
+           background-color: black;
+           margin: 2vw 4vw;
+        }
+		
+        #editor {
+            width: 50%;
+            height: 100% !important;
+			display: flex;
+            flex-direction: column;			
+            border-right: 2px solid #ddd; /* Visual separation between editor and DOSBox */
+        }
+
+		
+    </style>
+
+    
+	<link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/dracula.min.css">
+	
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/gas/gas.min.js"></script>
+
+    
+    <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+</head>
+<body>
+
+    
+    <div id="editor"></div>
+
+    
+    <div id="dosbox">
+        
+			<div class="container">
+				<div class="player">
+					<div id="jsdos-1"></div>
+				</div>
+			</div>  		
+		
+    </div>
+
+    <!-- Control buttons for enabling/disabling DOSBox -->
+    <div id="controls">
+        <button id="run-button" class="control-button">Compile & Run</button>
+        <button id="disable-dosbox" class="control-button">Disable DOSBox</button>
+    </div>
+
+
+  		
+    <script>
+		async function createDosInstance() {
+			const dosboxCanvas = document.getElementById("jsdos-1");
+			const asmCode = editor.getValue(); // Get content from the CodeMirror editor
+			const byteArray = stringToUint8Array(asmCode); // Convert content to Uint8Array
+
+            console.log(byteArray);  // Output the Uint8Array to the console			
+			
+			return Dos(dosboxCanvas, {
+					kiosk: true,				
+					url: "https://dl.dropboxusercontent.com/scl/fi/q3kr7hd05doh0oyed9jw0/bundle.jsdos?rlkey=5yreoa20qhsiz56bpc9gfuyg0&st=mtfvczj9&dl=0",
+					 onEvent: (event, ci) => {
+						if (event === "ci-ready") 
+						{
+							console.log("writing to file...");
+							ci.fsWriteFile("lab.asm", byteArray);
+							console.log("DONE writing to file...");
+						}
+					  },			
+				});	
+			}	
+	
+        var dosInstance;
+        let dosboxPaused = true; // Start with DOSBox paused
+
+        
+		const editor = CodeMirror(document.getElementById('editor'), {
+            mode: 'gas', // Assembly syntax highlighting
+            lineNumbers: true,
+            theme: 'dracula',
+            value: 
+					'.model small \n' +
+					'.stack 100 \n' +
+					'.data \n' + 
+					'	v db 100 \n' +
+					'.code \n' +
+					'	start: \n' +
+					'		mov ax,@data \n' +
+					'		mov ds,ax \n' +
+					'; Type your assembly code here.\n' +
+					'  MOV    AL, \'H\'    ; ASCII code: 72 \n' + 
+					'  INT    10h        ; print it! \n' + 
+					'	mov ah, 4ch \n' + 
+					' 	int 21h \n' + 
+					'	end start' 
+        });
+		
+        editor.setSize("100%", "100%");  // Make it fill 100% width and height
+		
+        function stringToUint8Array(str) {
+            const encoder = new TextEncoder();  // Use TextEncoder to convert string to UTF-8 bytes
+            return encoder.encode(str);         // Return Uint8Array
+        }
+
+        document.getElementById("run-button").addEventListener("click", async () => {
+				dosInstance = await createDosInstance();
+				editor.setOption('readOnly', true);  // Set editor to read-only mode
+
+                console.log('DOSBox enabled');
+        });
+
+        // Disable DOSBox button - editor takes control, DOSBox is paused
+        document.getElementById('disable-dosbox').addEventListener('click', () => {
+            if (dosInstance) {
+				editor.setOption('readOnly', false);  // Set editor to read-only mode
+                dosInstance.setPaused(true);
+				dosInstance.stop();
+				dosInstance = null;
+                editor.focus(); // Focus the editor for input
+                console.log('DOSBox disabled');
+            }
+        });
+
+    </script>
+</body>
+</html>
