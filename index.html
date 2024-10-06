@@ -108,6 +108,20 @@
 
   		
     <script>
+		function toNodes(fsTree) {
+			let fs = [];
+			for (const next of (fsTree.nodes?.sort(nodeSorter) || [])) {
+				fs.push(toNode(next, "."));
+			}
+			return fs;
+		}
+
+		async function onRefresh(ci) {
+			ci.fsTree(null);
+			const tree = await ci.fsTree();
+			
+		}
+
 		async function createDosInstance() {
 			const dosboxCanvas = document.getElementById("jsdos-1");
 			const asmCode = editor.getValue(); // Get content from the CodeMirror editor
@@ -124,6 +138,7 @@
 						{
 							console.log("writing to file...");
 							await ci.fsWriteFile("lab.asm", byteArray);
+							await onRefresh(ci);
 							console.log("DONE writing to file...");
 						}
 					  },			
