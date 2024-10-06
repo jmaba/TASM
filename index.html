@@ -116,14 +116,14 @@
             console.log(byteArray);  // Output the Uint8Array to the console			
 			
 			return Dos(dosboxCanvas, {
-					kiosk: true,		
-					autoStart: true,				
+					
+					autoStart: true,
 					url: "https://dl.dropboxusercontent.com/scl/fi/q3kr7hd05doh0oyed9jw0/bundle.jsdos?rlkey=5yreoa20qhsiz56bpc9gfuyg0&st=mtfvczj9&dl=0",
-					 onEvent: (event, ci) => {
+					 onEvent:  async (event, ci) => {
 						if (event === "ci-ready") 
 						{
 							console.log("writing to file...");
-							ci.fsWriteFile("lab.asm", byteArray);
+							await ci.fsWriteFile("lab.asm", byteArray);
 							console.log("DONE writing to file...");
 						}
 					  },			
